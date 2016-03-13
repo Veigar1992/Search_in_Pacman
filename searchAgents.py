@@ -284,24 +284,38 @@ class CornersProblem(search.SearchProblem):
         self._expanded = 0 # Number of search nodes expanded
         # Please add any code here which you would like to use
         # in initializing the problem
+        
+        self.DDD=list(self.corners)
+        self.state=(self.startingPosition,(False,False,False,False))
+        print "!!!!!",self.state
+        """
+        for x in range(len(self.DDD)):
+            if self.state[0]==self.DDD[x]:
+                cornercount[self.state]=intc
+                self.DDD.pop[x]
+        """
+        
         "*** YOUR CODE HERE ***"
 
     def getStartState(self):
         "Returns the start state (in your state space, not the full Pacman state space)"
         "*** YOUR CODE HERE ***"
-    #    util.raiseNotDefined()
-        return (self.startingPosition,(False,False,False,False))
+        return self.state
+        util.raiseNotDefined()
 
     def isGoalState(self, state):
         "Returns whether this search state is a goal state of the problem"
         "*** YOUR CODE HERE ***"
-     #   util.raiseNotDefined()
         cornerState = state[1]
         return cornerState[0] and cornerState[2] and cornerState[3] and cornerState[1]
 
+
+
+        util.raiseNotDefined()
+
     def getSuccessors(self, state):
         """
-        Returns successor states, the actions they require, and a cost of 1.
+        Retcessor states, the actions they require, and a cost of 1.
 
          As noted in search.py:
              For a given state, this should return a list of triples,
@@ -319,12 +333,13 @@ class CornersProblem(search.SearchProblem):
             #   dx, dy = Actions.directionToVector(action)
             #   nextx, nexty = int(x + dx), int(y + dy)
             #   hitsWall = self.walls[nextx][nexty]
-
+             
             "*** YOUR CODE HERE ***"
             x, y = state[0]
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
-            if not self.walls[nextx][nexty]:
+            hitsWall = self.walls[nextx][nexty]
+            if not hitsWall:
                 pos = (nextx, nexty)
                 cornerState = [False,False,False,False]
                 index = 0
@@ -332,8 +347,7 @@ class CornersProblem(search.SearchProblem):
                     if (nextx, nexty)== corner or state[1][index]:
                         cornerState[index] = True
                     index += 1
-                cost = 1
-                successors.append(((pos,tuple(cornerState)),action,cost))
+                successors.append(((pos,tuple(cornerState)),action,1))
         self._expanded += 1
         return successors
 
@@ -368,8 +382,19 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    index=0
+    distantmax=0
+    for cstate in state[1]:
+        if cstate==False:
+            xy1 = state[0]
+            xy2 = corners[index]
+            distant=abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1]) 
+            if distant>distantmax:
+               distantmax=distant
+        index+=1 
+    return distantmax # Default to trivial solution
 
+     
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
@@ -391,6 +416,14 @@ class FoodSearchProblem:
         self.startingGameState = startingGameState
         self._expanded = 0
         self.heuristicInfo = {} # A dictionary for the heuristic to store information
+        foods = self.start[1].asList()
+        self.edgeWeight = util.PriorityQueue()
+        foodNum = len(foods)
+        for x in range(foodNum):
+            for y in range(x+1,foodNum):
+                fx,fy = foods[x], foods[y]
+                mDis = util.manhattanDistance(fx,fy)
+                self.edgeWeight.push((fx, fy, mDis), mDis)
 
     def getStartState(self):
         return self.start
@@ -443,8 +476,8 @@ def foodHeuristic(state, problem):
     If using A* ever finds a solution that is worse uniform cost search finds,
     your heuristic is *not* consistent, and probably not admissible!  On the other hand,
     inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
-
     The state is a tuple ( pacmanPosition, foodGrid ) where foodGrid is a
+
     Grid (see game.py) of either True or False. You can call foodGrid.asList()
     to get a list of food coordinates instead.
 
@@ -458,8 +491,45 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
+    foods=foodGrid.asList()
+    positionGraph = foods[:]
+    positionGraph.append(position)
     "*** YOUR CODE HERE ***"
-    return 0
+    import copy
+    weight = copy.deepcopy(problem.edgeWeight)
+    for food in foods:
+        mDis = util.manhattanDistance(position, food)
+        weight.push((position, food, mDis), mDis)
+    return MSTKruskal(state,problem,positionGraph, weight)
+
+def MSTKruskal(state,problem,G,W):
+    #self.edgeWeight.push((fx, fy, mDis), mDis)
+    A = []
+    setList = []
+    h = 0
+    for pos in G:
+        tmp = set()
+        tmp.add(pos)
+        setList.append(tmp)
+    while True:
+        if W.isEmpty(): return h
+        currEdge = W.pop()
+        fx, fy, mDis = currEdge[0], currEdge[1], currEdge[2]
+        if  fx not in G or fy not in G: continue
+#        xset = findSet(setList,fx)
+#        yset = findSet(setList,fy)
+        for currset in setList:
+            if fx in currset:
+                xset = currset
+            if fy in currset:
+                yset = currset
+        if xset != yset:
+            h += mDis
+            A.append((fx,fy))
+            xset.union(yset)
+            if len(xset) == len(G):
+                return h
+    return h
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
