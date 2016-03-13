@@ -413,8 +413,8 @@ class FoodSearchProblem:
     def __init__(self, startingGameState):
         self.start = (startingGameState.getPacmanPosition(), startingGameState.getFood())
         self.walls = startingGameState.getWalls()
-        print "Food: \n",self.start[1]
-        print "Wall: \n",self.walls
+#        print "Food: \n",self.start[1]
+#        print "Wall: \n",self.walls
         self.startingGameState = startingGameState
         self._expanded = 0
         self.heuristicInfo = {} # A dictionary for the heuristic to store information
@@ -628,6 +628,13 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
+#        print "state: ", state
+#        print "self.food: ", self.food.asList()
+#        isGoal = state == self.food.asList()
+#        print isGoal
+#        return isGoal
+#        print self.food.asList()
+#        print state in self.food.asList()
         return state in self.food.asList()
         util.raiseNotDefined()
 
