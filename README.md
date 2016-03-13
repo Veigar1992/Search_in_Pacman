@@ -1,2 +1,2 @@
 # Search_in_Pacman
-http://xgxy.cug.edu.cn/rjgcx/lzw/AI/projects/search/index.htm
+http://inst.eecs.berkeley.edu/~cs188/pacman/search.html
