@@ -33,7 +33,8 @@ class SolveEightQueens:
             currentNumberOfAttacks = newBoard.getNumberOfAttacks()
             (newBoard, newNumberOfAttacks) = newBoard.getBetterBoard()
             i+=1
-            if currentNumberOfAttacks <= newNumberOfAttacks:
+#            if currentNumberOfAttacks <= newNumberOfAttacks:
+            if newNumberOfAttacks == 0 or currentNumberOfAttacks <= newNumberOfAttacks:
                 break
         return newBoard
 
@@ -43,7 +44,8 @@ class Board:
             self.squareArray = self.initBoardWithRandomQueens()
         else:
             self.squareArray = squareArray
-
+        self.queueAttack = [0]*8
+#        print self.squareArray
     @staticmethod
     def initBoardWithRandomQueens():
         tmpSquareArray = [["." for i in range(0,8)] for j in range(0,8)]
@@ -74,11 +76,62 @@ class Board:
 
     def getBetterBoard(self):
         #TODO: put your code here...
-        return (self, 42)
+#        tmpBoard = copy.deepcopy(self)
+        tmpBoard = self
+        costBoard = tmpBoard.getCostBoard().squareArray
+        minAttackNum = 1000000
+#        tmpBoard.queueAttack = [8,7,6,5,4,3,2,1]
+#        print "costBoard: \n", costBoard
+        for r in range(0,8):
+            for c in range(0,8):
+                if costBoard[r][c] == "q": continue
+                if costBoard[r][c] < minAttackNum:
+                    minAttackNum = costBoard[r][c]
+        maxAttacjNum = 0
+        moveQueue = -1
+        while True:
+            for i in range(0,8):
+                if tmpBoard.queueAttack[i] > maxAttacjNum:
+                    moveQueue = i
+                    maxAttacjNum = tmpBoard.queueAttack[i]
+#            print moveQueue, maxAttacjNum, tmpBoard.queueAttack
+            for i in range(0,8):
+                if costBoard[i][moveQueue] == minAttackNum:
+                    pos = 0
+                    for k in range(0,8):
+                        if costBoard[k][moveQueue]=="q":
+                            pos = k
+                    tmpBoard.squareArray[pos][moveQueue] = "."
+                    tmpBoard.squareArray[i][moveQueue] = "q"
+#                    print tmpBoard.squareArray
+#                    print "#attack: ", minAttackNum
+                    return (tmpBoard, minAttackNum)
+            tmpBoard.queueAttack[moveQueue] = -1
+            maxAttacjNum = -1
+        return (tmpBoard, minAttackNum)
 
     def getNumberOfAttacks(self):
         #TODO: put your code here...
-        return 8
+        self.queueAttack = [0]*8
+        queuePos = []
+        attackNum = 0
+        for r in range(0,8):
+            for c in range(0,8):
+                if self.squareArray[r][c] == "q":
+                    queuePos.append((r,c))
+                if len(queuePos) == 8:
+                    break
+        for i in range(0,8):
+            for j in range(i+1,8):
+                qx, qy = queuePos[i], queuePos[j]
+                if qx[0]== qy[0] or qx[1] == qy[1] or \
+                        abs(qx[0]-qy[0]) == abs(qx[1]-qy[1]):
+                            attackNum+=1
+                            self.queueAttack[i] += 1
+                            self.queueAttack[j] += 1
+#        print queuePos
+#        print "attack: " , attackNum
+        return attackNum
 
 if __name__ == "__main__":
     #Enable the following line to generate the same random numbers (useful for debugging)
