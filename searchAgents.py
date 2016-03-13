@@ -413,6 +413,8 @@ class FoodSearchProblem:
     def __init__(self, startingGameState):
         self.start = (startingGameState.getPacmanPosition(), startingGameState.getFood())
         self.walls = startingGameState.getWalls()
+        print "Food: \n",self.start[1]
+        print "Wall: \n",self.walls
         self.startingGameState = startingGameState
         self._expanded = 0
         self.heuristicInfo = {} # A dictionary for the heuristic to store information
@@ -424,7 +426,7 @@ class FoodSearchProblem:
                 fx,fy = foods[x], foods[y]
                 mDis = util.manhattanDistance(fx,fy)
                 self.edgeWeight.push((fx, fy, mDis), mDis)
-
+        print len(self.start[1].asList())
     def getStartState(self):
         return self.start
 
@@ -435,6 +437,7 @@ class FoodSearchProblem:
         "Returns successor states, the actions they require, and a cost of 1."
         successors = []
         self._expanded += 1
+        cost = len(self.start[1].asList())
         for direction in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             x,y = state[0]
             dx, dy = Actions.directionToVector(direction)
@@ -489,18 +492,42 @@ def foodHeuristic(state, problem):
     if you only want to count the walls once and store that value, try:
       problem.heuristicInfo['wallCount'] = problem.walls.count()
     Subsequent calls to this heuristic can access problem.heuristicInfo['wallCount']
+
+    index=0
+    distantmax=0
+    for cstate in foods:
+        xy1 = position
+        xy2 = foods[index]
+        distant=abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
+        if distant>distantmax:
+            distantmax=distant
+        index+=1
+    return distantmax # Default to trivial solution
     """
     position, foodGrid = state
     foods=foodGrid.asList()
     positionGraph = foods[:]
     positionGraph.append(position)
     "*** YOUR CODE HERE ***"
+
     import copy
     weight = copy.deepcopy(problem.edgeWeight)
     for food in foods:
         mDis = util.manhattanDistance(position, food)
+#        print "pos, food:", position, food, mDis
         weight.push((position, food, mDis), mDis)
-    return MSTKruskal(state,problem,positionGraph, weight)
+    h = MSTKruskal(state,problem,positionGraph, weight)
+    if len (positionGraph) == 3:
+        xp,yp = position[0], position[1]
+        fx, fy = foods[0], foods[1]
+        if (xp == fx[0] and xp == fy[0] and yp < max(fx[1], fy[1]) and yp > min(fx[1],fy[1])) or \
+                (yp==fx[1] and yp == fy[1] and xp < max(fx[0], fy[0]) and xp > min(fx[0],fy[0])):
+            h += 1
+
+#    print "foods: ", positionGraph
+#    print "state: ", state
+#    print "h: ", h
+    return h
 
 def MSTKruskal(state,problem,G,W):
     #self.edgeWeight.push((fx, fy, mDis), mDis)
@@ -515,19 +542,26 @@ def MSTKruskal(state,problem,G,W):
         if W.isEmpty(): return h
         currEdge = W.pop()
         fx, fy, mDis = currEdge[0], currEdge[1], currEdge[2]
+#        print "currEdge: ",fx, fy, mDis
         if  fx not in G or fy not in G: continue
 #        xset = findSet(setList,fx)
 #        yset = findSet(setList,fy)
+        xset, yset = 0,0
+        index = 0
         for currset in setList:
             if fx in currset:
-                xset = currset
+                xset = index
             if fy in currset:
-                yset = currset
+                yset = index
+            index += 1
         if xset != yset:
             h += mDis
             A.append((fx,fy))
-            xset.union(yset)
-            if len(xset) == len(G):
+#            print h, setList[xset], setList[yset]
+            setList[xset] = setList[xset].union(setList[yset])
+            setList[yset] = setList[yset].union(setList[xset])
+#            print h, setList[xset], setList[yset]
+            if len(setList[xset]) == len(G):
                 return h
     return h
 
